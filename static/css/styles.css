@@ -1,0 +1,186 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    
+}
+
+body{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Noto Sans", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    background-color:#CECECD;
+
+
+}
+
+.body-container{
+    width:100%;
+    text-align: center;
+}
+
+
+.header{
+    font-size:3rem;
+    font-weight:100;
+    background-color:#5C6E93;
+    color:#F4F6F1;
+    width:100%;
+    height:25%;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    padding:3%;
+}
+
+.main-container{
+    display:flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+}
+
+input[type="text"]{
+    width:50%;
+    text-align:center;
+    font-size:1rem;
+    color:#383632;
+}
+
+th, td{
+    text-align: center;
+    font-size:0.8em;
+
+}
+
+#tickerform{
+    color:#383632;
+    margin:3%;
+}
+
+.buy-container{
+    padding: 2%;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content:space-between;
+    background-color:#ECEDE8;
+    color: #3C3E58;
+    height:350px;
+
+    
+}
+
+.money{
+    display:flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.values{
+    display:flex;
+    flex-direction: column;
+}
+
+table{
+    width: 700px;
+    margin-bottom:15px;
+}
+
+th{
+    height:50px;
+    padding:5px;
+    font-size:1rem;
+    font-weight:100;
+    background-color:#898989;
+    color:#FEFCF3;
+}
+
+td{
+    text-align:center;
+    padding:5px;
+    font-size:1rem;
+    font-weight:100;
+    
+}
+
+tr:nth-child(even) {
+    background-color: #FEFCF3;
+}
+
+h2{
+    margin-bottom:10px;
+    font-weight:100;
+}
+
+h3{
+    font-weight:400;
+    font-size: 1.3rem;
+}
+
+h4{
+    font-weight:100;
+    font-size:1rem;
+}
+
+.balance-container{
+    text-align: center;
+    display:block;
+    align-items: center;
+    justify-content: right;
+    width:60%;
+    padding:0%;
+
+}
+
+.purchase-button{
+    background-color:#FEFCF3;
+    color:#383632;
+    border-color:#898989;
+    border-width:2px;
+    border-style:solid;
+    padding: 2%;
+    border-radius:25px;
+    width:40%;
+    height:10%;
+    font-size:0.9rem;
+    margin-top:2%;
+    
+}
+
+.reset-button{
+    background-color:#FEFCF3;
+    color:#383632;
+    border-color:#898989;
+    border-width:2px;
+    border-style:solid;
+    border-radius:25px;
+    font-size:0.9rem;
+    width:25%;
+    padding: 2%;
+    height:10%;
+
+
+}
+
+.purchase-button:hover,
+.reset-button:hover{
+    background-color:#898989;
+    color:#FEFCF3;
+    border-color:#898989;
+
+}
+
+.history-container{
+    display:flex;
+    margin-top:3%;
+    flex-direction: column;
+    align-items: center;
+    color:#383632;
+
+}

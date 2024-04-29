@@ -1,0 +1,429 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Trader</title>
+    <link rel="stylesheet" href="{% static  'css/styles.css'%}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+</head>
+<body>
+<div class="body-container">
+    <div class="header">paper trader</div>
+    <form method="GET" id="tickerform">
+        {{form}}
+    </form>
+    <div class="main-container">
+    <div id="apple">
+    {% autoescape off %}
+    {{aapl_plot_div|safe}}
+    {% endautoescape %}
+    </div>
+
+    <div class="microsoft-container" id="microsoft">
+        {% autoescape off %}
+        {{msft_plot_div}}
+        {% endautoescape %}
+    </div>
+
+    <div class="google-container" id="google">
+    {% autoescape off %}
+    {{goog_plot_div}}
+    {% endautoescape %}
+    </div>
+
+<div class="buy-container">
+    <h2>portfolio</h2>
+
+    <form method = "POST" id="transaction-form">
+        {%csrf_token%}
+    <table>
+        <tr>
+            <th>stock</th>
+            <th>shares owned</th> 
+            <th>share price</th>
+            <th>buy quantity</th>
+            <th>sell quantity</th>
+        </tr>
+        {% for share in shares %}
+        <tr>
+            <td>{{share.share_name}}</td>
+            <td id="shares-owned-{{share.share_name }}">
+                {{share.owned_share}}
+            </td>
+            <td id="shares-price-{{share.share_name }}">
+                {{share.share_price}}
+            </td>
+        
+            <td><input type="text" class="buy-quantity" data-stock="{{share.share_name }}">
+                </input>
+            </td>
+
+            <td>
+                <input type="text" class="sell-quantity" data-stock="{{share.share_name }}">
+                </input>
+            </td>
+        </tr>
+
+        {% endfor %}
+    </table>
+    <div class="money">
+        <div class="values">
+    <h4>buy total:$
+        <span id="buy-total">0</span>
+    </h4>
+    <h4>sell total:$
+        <span id="sell-total">0</span>
+    </h4>
+    <h4>transaction total:$
+        <span id="transaction-total">0</span>
+    </h4>
+</div>
+
+<div class="balance-container">
+    <h3>balance:$
+        <span class="balance">10000</span>
+    </h3>
+    <button type="submit" id= "complete-transaction" class="purchase-button">complete transaction</button>
+    <button id= "reset" class="reset-button">reset</button>
+
+    
+    </div>
+</div>
+</div>
+
+
+</form>
+
+</div>
+
+<div class="history-container">
+    <h3>transaction history</h3>
+
+    <table id="transaction-history">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Stock</th>
+                <th>Stock Price</th>
+                <th>Buy Quantity</th>
+                <th>Sell Quantity</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+</div>
+
+    <script>
+
+    
+        const transactionForm = document.getElementById('transaction-form');
+        const buyTotalElement = document.getElementById('buy-total');
+        const sellTotalElement = document.getElementById('sell-total');
+        const transactionTotalElement = document.getElementById('transaction-total');
+        
+        const buyQuantityInputs = document.querySelectorAll('.buy-quantity');
+        const sellQuantityInputs = document.querySelectorAll('.sell-quantity');
+        const balanceElement = document.querySelector('.balance');
+        const sharesOwnedElements = document.querySelectorAll('[id^=shares-owned]');
+
+        let selectElement = document.getElementById('ticker_field');
+        let balance = 10000;
+        let totalBuy=0;
+        let totalSell = 0;
+        let totalShares = 0;
+        let stockName, sharePrice, buyQuantity, sellQuantity;
+    
+        if(selectElement){
+            selectElement.addEventListener('change', function() {
+
+                document.getElementById('tickerform').submit();
+            });
+        }
+
+        function initializePortfolioFromLocalStorage() {
+            const savedBalance = localStorage.getItem('balance');
+            if (savedBalance !== null) {
+                balance = parseFloat(savedBalance);
+                balanceElement.textContent = balance.toFixed(2);
+            }
+            sharesOwnedElements.forEach(sharesOwnedElement => {
+                const stockName = sharesOwnedElement.id.split('-')[2];
+                const savedSharesOwned = localStorage.getItem(`sharesOwned-${stockName}`);
+                if (savedSharesOwned !== null) {
+                    sharesOwnedElement.textContent = parseInt(savedSharesOwned);
+                }
+            });
+        }
+
+        initializePortfolioFromLocalStorage();
+
+
+        buyQuantityInputs.forEach(input => { 
+            if(balance <= 10000){
+                input.addEventListener('change', function() {
+
+                    totalBuy = 0;
+                    buyQuantityInputs.forEach(input=>{
+                        const stockName = input.dataset.stock;
+                        const sharePriceElement = document.querySelector(`#shares-price-${stockName}`);
+                        const sharesOwnedElement=document.querySelector(`#shares-owned-${stockName}`);
+                        const buyQuantity = parseInt(input.value)|| 0;
+
+                        const sharesOwned = parseInt(sharesOwnedElement.textContent)||0;
+                        const totalShares = buyQuantity + sharesOwned; //?//
+
+                        const sharePrice = parseFloat(sharePriceElement.textContent)|| 0;
+                        const cost = (sharePrice * buyQuantity);
+                        totalBuy -= cost
+                        
+                        
+                    });
+                    const buyTotalElement = document.getElementById('buy-total');
+                    buyTotalElement.textContent = totalBuy.toFixed(2)
+                    updateTransactionTotal();
+
+                    
+                });
+        
+            }
+
+        });
+        
+        sellQuantityInputs.forEach(input => {
+            input.addEventListener('change', function(){
+                totalSell = 0;
+                sellQuantityInputs.forEach(input=>{
+                    const stockName = input.dataset.stock;
+                    const sharePriceElement = document.querySelector(`#shares-price-${stockName}`);
+                    const sharesOwnedElement=document.querySelector(`#shares-owned-${stockName}`);
+                    const sellQuantity = parseInt(input.value)|| 0;
+                    const sharesOwned = parseInt(sharesOwnedElement.textContent)||0;
+                    const totalShares = Math.max(sharesOwned - sellQuantity, 0);  //?//
+                    const sharePrice = parseFloat(sharePriceElement.textContent)|| 0;
+                    const cost = (sharePrice * sellQuantity);
+                    totalSell += cost
+
+                });
+                const sellTotalElement = document.getElementById('sell-total');
+                sellTotalElement.textContent = totalSell.toFixed(2)
+                updateTransactionTotal();      
+            });
+        });
+        
+
+        function updateTransactionTotal(){
+            const transactionTotalElement = document.getElementById('transaction-total');
+            const transactionTotal = parseFloat(totalBuy) + parseFloat(totalSell);
+            transactionTotalElement.textContent = transactionTotal.toFixed(2);
+
+        
+        
+        } 
+        
+
+        transactionForm.addEventListener('submit', function(event) {
+            event.preventDefault();           
+
+            const transactionTotal = parseFloat(transactionTotalElement.textContent);
+            let newBalance = parseInt(transactionTotal) + parseInt(balance)
+
+            if (newBalance < 0) {
+                alert('Transaction total exceeds balance. Transaction cannot be completed.');
+                return;
+            } 
+            let transactionCompleted = true;
+
+            sharesOwnedElements.forEach(sharesOwnedElement =>{
+                const stockName = sharesOwnedElement.id.split('-')[2];
+                const sharePriceElement = document.querySelector(`#shares-price-${stockName}`);
+                const sharePrice = parseFloat(sharePriceElement.textContent)|| 0;
+                const sharesOwned = parseInt(sharesOwnedElement.textContent)|| 0;
+
+                const buyQuantityInput = document.querySelector(`.buy-quantity[data-stock="${stockName}"]`);
+                const sellQuantityInput = document.querySelector(`.sell-quantity[data-stock="${stockName}"]`);        
+                const buyQuantity = parseInt(document.querySelector(`.buy-quantity[data-stock="${stockName}"]`).value)||0;
+                const sellQuantity = parseInt(document.querySelector(`.sell-quantity[data-stock="${stockName}"]`).value)||0;
+                
+                const totalShares = sharesOwned + buyQuantity - sellQuantity;
+
+                localStorage.setItem(`buyQuantity-${stockName}`, buyQuantity);
+                localStorage.setItem(`sellQuantity-${stockName}`, sellQuantity);
+                localStorage.setItem('stockName', stockName);
+                localStorage.setItem(`sharePrice-${stockName}`, sharePrice);
+
+
+
+                
+
+                if (sharesOwned < sellQuantity){
+                    alert('Not enough shares for transaction.');
+                    transactionCompleted = false;
+                    return;
+                }
+                
+                sharesOwnedElement.textContent = totalShares;
+                buyQuantityInput.value = '';
+                sellQuantityInput.value = '';
+                
+        });
+
+            if (transactionCompleted){
+
+            
+                const currentDate = new Date().toLocaleString();
+                
+                completeTransaction();
+                savePortfolioToLocalStorage(currentDate);
+                addTransactionToHistory(currentDate, stockName, sharePrice, buyQuantity, sellQuantity, balance);
+                
+
+            }
+                
+        });
+
+        function savePortfolioToLocalStorage(currentDate) {
+
+            localStorage.setItem('balance', balance.toFixed(2));
+
+            sharesOwnedElements.forEach(sharesOwnedElement => {
+                const stockName = sharesOwnedElement.id.split('-')[2];
+                const sharesOwned = parseInt(sharesOwnedElement.textContent);
+                localStorage.setItem(`sharesOwned-${stockName}`, sharesOwned);
+            
+
+            });
+
+            localStorage.setItem('date', currentDate);
+            
+        };
+
+        function saveTransactionToLocalStorage(transaction) {
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        transactions.push(transaction);
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
+
+        
+        function addTransactionToHistory(currentDate, stockName, sharePrice, buyQuantity, sellQuantity, balance) {    
+        
+            const tableBody = document.querySelector('#transaction-history tbody');
+            
+            sharesOwnedElements.forEach(sharesOwnedElement => {
+            const stockName = sharesOwnedElement.id.split('-')[2];
+            const buyQuantity = localStorage.getItem(`buyQuantity-${stockName}`);
+            const sellQuantity = localStorage.getItem(`sellQuantity-${stockName}`);
+            const sharePrice = localStorage.getItem(`sharePrice-${stockName}`);
+            const balance = localStorage.getItem('balance');
+
+        
+            const transaction = {
+                currentDate: currentDate, 
+                stockName: stockName, 
+                sharePrice: sharePrice, 
+                buyQuantity: buyQuantity, 
+                sellQuantity: sellQuantity, 
+                balance: balance};
+            saveTransactionToLocalStorage(transaction); 
+            if(parseInt(buyQuantity) > 0 || parseInt(sellQuantity) > 0){   
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${currentDate}</td>
+                <td>${stockName}</td>
+                <td>${sharePrice}</td>
+                <td>${buyQuantity}</td>
+                <td>${sellQuantity}</td>
+                <td>${balance}</td>
+                `;
+            tableBody.appendChild(newRow);
+            }
+        }
+        )}
+
+            function initializeTransactionHistoryFromLocalStorage() {
+                const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                const tableBody = document.querySelector('#transaction-history tbody');
+                tableBody.innerHTML = '';
+                transactions.forEach(transaction => {
+                    const { buyQuantity, sellQuantity } = transaction;
+                    
+                    if(parseInt(buyQuantity) > 0 || parseInt(sellQuantity) > 0){  
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${transaction.currentDate}</td>
+                        <td>${transaction.stockName}</td>
+                        <td>${transaction.sharePrice}</td>
+                        <td>${transaction.buyQuantity}</td>
+                        <td>${transaction.sellQuantity}</td>
+                        <td>${transaction.balance}</td>
+                    `;
+                    tableBody.appendChild(newRow);
+                    }
+            })}
+            
+            ;
+                
+            
+        
+            initializeTransactionHistoryFromLocalStorage();
+                
+
+
+        function completeTransaction(){
+                const transactionTotal = totalBuy + totalSell;
+                balance += transactionTotal;
+                balanceElement.textContent = balance.toFixed(2);  
+                buyTotalElement.textContent = '0';
+                sellTotalElement.textContent = '0';
+                totalBuy=0;
+                totalSell=0;
+                updateTransactionTotal();  
+                    
+                };
+
+        function resetPortfolio(){
+            balance = 10000;
+            totalBuy=0;
+            totalSell = 0;
+            sharesOwned = 0;
+            totalShares = 0;
+
+            balanceElement.textContent = balance.toFixed(2);
+            buyTotalElement.textContent = '0';
+            sellTotalElement.textContent = '0';
+            transactionTotalElement.textContent = '0';
+
+            localStorage.clear();
+
+            buyQuantityInputs.forEach(input => {
+                input.value = '';
+            });
+            sellQuantityInputs.forEach(input => {
+                input.value = '';
+            });
+            sharesOwnedElements.forEach(element => {
+                element.textContent = '0';
+            });
+
+            const tableBody = document.querySelector('#transaction-history tbody');
+            tableBody.innerHTML = '';
+        }
+        
+        document.getElementById("reset").addEventListener('click', function(){
+            resetPortfolio();
+            savePortfolioToLocalStorage();
+        });
+
+
+        
+
+    </script>
+</body>
+</html>
